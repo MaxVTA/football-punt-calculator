@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- Head section remains the same until style changes -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Punt Calculator</title>
+    <style>
+        /* Previous styles remain the same until .input-row */
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .calculator {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .field-position {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .side-inputs {
+            flex: 1;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: opacity 0.3s ease;
+        }
+        .input-row.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        input[type="number"] {
+            width: 80px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        input[type="radio"] {
+            margin-right: 5px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        button {
+            background-color: #004d1a;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button.reset {
+            background-color: #666;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .field-diagram {
+            width: 100%;
+            height: 120px;
+            background-color: #4CAF50;
+            margin: 20px 0;
+            position: relative;
+            border-radius: 4px;
+        }
+        .yard-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .yard-line {
+            width: 1px;
+            height: 100%;
+            background-color: white;
+            opacity: 0.5;
+        }
+        .yard-markers {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            font-size: 12px;
+            color: white;
+        }
+        .error {
+            color: red;
+            display: none;
+            margin-top: 10px;
+            text-align: center;
+        }
+        h2 {
+            margin-top: 0;
+            font-size: 1.2em;
+            color: #333;
+        }
+    </style>
+</head>
+<!-- Body section remains exactly the same -->
+<body>
+    <div class="calculator">
+        <h1>Football Punt Calculator</h1>
+        
+        <div class="field-diagram">
+            <div class="yard-lines"></div>
+            <div class="yard-markers"></div>
+        </div>
+
+        <div class="field-position">
+            <div class="side-inputs" id="kicking-side">
+                <h2>Kicking Team's Side</h2>
+                <div class="input-group">
+                    <label>Line of Scrimmage:</label>
+                    <div class="input-row" data-input-type="los">
+                        <input type="number" id="los-kick" min="1" max="50" placeholder="1-50">
+                        <input type="radio" name="los-side" value="kick">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Fielding Location:</label>
+                    <div class="input-row" data-input-type="landing">
+                        <input type="number" id="landing-kick" min="1" max="50" placeholder="1-50">
+                        <input type="radio" name="landing-side" value="kick">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Returner Ending Spot:</label>
+                    <div class="input-row" data-input-type="final">
+                        <input type="number" id="final-kick" min="1" max="50" placeholder="1-50">
+                        <input type="radio" name="final-side" value="kick">
+                    </div>
+                </div>
+            </div>
+
+            <div class="side-inputs" id="returning-side">
+                <h2>Returning Team's Side</h2>
+                <div class="input-group">
+                    <label>Line of Scrimmage:</label>
+                    <div class="input-row" data-input-type="los">
+                        <input type="number" id="los-return" min="1" max="50" placeholder="1-50">
+                        <input type="radio" name="los-side" value="return">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Fielding Location:</label>
+                    <div class="input-row" data-input-type="landing">
+                        <input type="number" id="landing-return" min="1" max="50" placeholder="1-50">
+                        <input type="radio" name="landing-side" value="return">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Returner Ending Spot:</label>
+                    <div class="input-row" data-input-type="final">
+                        <input type="number" id="final-return" min="1" max="50" placeholder="1-50">
+                        <input type="radio" name="final-side" value="return">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button onclick="calculatePunt()">Calculate Punt Stats</button>
+            <button onclick="resetCalculator()" class="reset">Reset</button>
+        </div>
+
+        <div class="error" id="error-message">
+            Please check your inputs. Make sure all values are within valid ranges and only one side is selected for each position.
+        </div>
+
+        <div class="results" id="results">
+            <h3>Results:</h3>
+            <p>Punt Distance: <span id="punt-distance">-</span> yards</p>
+            <p>Return Yards: <span id="return-yards">-</span> yards</p>
+            <p>Net Punt: <span id="net-punt">-</span> yards</p>
+        </div>
+    </div>
+
+    <script>
+        function initializeField() {
+            const yardLines = document.querySelector('.yard-lines');
+            const yardMarkers = document.querySelector('.yard-markers');
+            
+            yardLines.innerHTML = '';
+            yardMarkers.innerHTML = '';
+            
+            for (let i = 0; i <= 20; i++) {
+                const line = document.createElement('div');
+                line.className = 'yard-line';
+                yardLines.appendChild(line);
+            }
+            
+            const markers = ['', '5', '10', '15', '20', '25', '30', '35', '40', '45', '50', '45', '40', '35', '30', '25', '20', '15', '10', '5', ''];
+            markers.forEach(mark => {
+                const marker = document.createElement('span');
+                marker.textContent = mark;
+                yardMarkers.appendChild(marker);
+            });
+        }
+
+        function setupInputHandlers() {
+            // Add input handlers for number inputs
+            const numberInputs = document.querySelectorAll('input[type="number"]');
+            numberInputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    const inputType = this.closest('.input-row').getAttribute('data-input-type');
+                    const side = this.id.includes('kick') ? 'kick' : 'return';
+                    const hasValue = this.value !== '';
+                    
+                    // Set radio button when input has value
+                    if (hasValue) {
+                        const radio = document.querySelector(`input[name="${inputType}-side"][value="${side}"]`);
+                        radio.checked = true;
+                        
+                        // Disable opposite side
+                        const otherSide = side === 'kick' ? 'return' : 'kick';
+                        const oppositeInput = document.querySelector(`#${inputType}-${otherSide}`).closest('.input-row');
+                        oppositeInput.classList.add('disabled');
+                    } else {
+                        // Enable both sides if input is cleared
+                        document.querySelectorAll(`.input-row[data-input-type="${inputType}"]`).forEach(row => {
+                            row.classList.remove('disabled');
+                        });
+                        // Clear radio buttons
+                        document.querySelectorAll(`input[name="${inputType}-side"]`).forEach(radio => {
+                            radio.checked = false;
+                        });
+                    }
+                });
+
+                // Add focus handler to highlight the active input
+                input.addEventListener('focus', function() {
+                    const inputType = this.closest('.input-row').getAttribute('data-input-type');
+                    const side = this.id.includes('kick') ? 'kick' : 'return';
+                    
+                    // Only disable opposite side if this input has a value
+                    if (this.value !== '') {
+                        const otherSide = side === 'kick' ? 'return' : 'kick';
+                        const oppositeInput = document.querySelector(`#${inputType}-${otherSide}`).closest('.input-row');
+                        oppositeInput.classList.add('disabled');
+                    }
+                });
+            });
+
+            // Add click handlers for radio buttons
+            const radioButtons = document.querySelectorAll('input[type="radio"]');
+            radioButtons.forEach(radio => {
+                radio.addEventListener('click', function() {
+                    const inputType = this.closest('.input-row').getAttribute('data-input-type');
+                    const side = this.value;
+                    const input = document.querySelector(`#${inputType}-${side}`);
+                    
+                    // Focus the corresponding input when radio is clicked
+                    input.focus();
+                });
+            });
+        }
+
+        function resetCalculator() {
+            // Clear all inputs
+            document.querySelectorAll('input[type="number"]').forEach(input => {
+                input.value = '';
+            });
+            
+            // Clear radio buttons
+            document.querySelectorAll('input[type="radio"]').forEach(radio => {
+                radio.checked = false;
+            });
+            
+            // Enable all input rows
+            document.querySelectorAll('.input-row').forEach(row => {
+                row.classList.remove('disabled');
+            });
+            
+            // Reset results
+            document.getElementById('punt-distance').textContent = '-';
+            document.getElementById('return-yards').textContent = '-';
+            document.getElementById('net-punt').textContent = '-';
+            
+            // Hide error message
+            document.getElementById('error-message').style.display = 'none';
+        }
+
+        function calculatePunt() {
+            const errorDiv = document.getElementById('error-message');
+            let los, landing, final;
+
+            // Get line of scrimmage
+            const losSide = document.querySelector('input[name="los-side"]:checked')?.value;
+            const losValue = losSide ? parseInt(document.getElementById(`los-${losSide}`).value) : null;
+            los = losSide === 'kick' ? losValue : (100 - losValue);
+
+            // Get landing spot
+            const landingSide = document.querySelector('input[name="landing-side"]:checked')?.value;
+            const landingValue = landingSide ? parseInt(document.getElementById(`landing-${landingSide}`).value) : null;
+            landing = landingSide === 'kick' ? landingValue : (100 - landingValue);
+
+            // Get final spot
+            const finalSide = document.querySelector('input[name="final-side"]:checked')?.value;
+            const finalValue = finalSide ? parseInt(document.getElementById(`final-${finalSide}`).value) : null;
+            final = finalSide === 'kick' ? finalValue : (100 - finalValue);
+
+            // Validate inputs
+            if (!losValue || !landingValue || !finalValue || 
+                losValue < 1 || losValue > 50 || 
+                landingValue < 1 || landingValue > 50 || 
+                finalValue < 1 || finalValue > 50) {
+                errorDiv.style.display = 'block';
+                return;
+            }
+            errorDiv.style.display = 'none';
+
+            let puntDistance = landing - los;
+            let returnYards = landing - final;
+            let netPunt = los - final;
+
+            // Handle touchback
+            if (landing > 100) {
+                puntDistance = 100 - los;
+                returnYards = 0;
+                netPunt = los - 80;
+            }
+            if (final > 100) {
+                netPunt = los - 80;
+            }
+
+            // Display results
+            document.getElementById('punt-distance').textContent = puntDistance;
+            document.getElementById('return-yards').textContent = returnYards;
+            document.getElementById('net-punt').textContent = netPunt;
+        }
+
+        // Initialize everything
+        window.onload = function() {
+            initializeField();
+            setupInputHandlers();
+        };
+    </script>
+</body>
+</html>
