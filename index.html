@@ -302,6 +302,22 @@ input[type="checkbox"] {
     background-color: rgba(0, 77, 26, 0.1);
 }
 
+input[type="number"] {
+    width: 80px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;  /* Add this line - this prevents iOS zoom */
+}
+        .copyright {
+            text-align: center;
+            color: #666;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+        }
+
     </style>
 </head>
 <body>
@@ -313,9 +329,9 @@ input[type="checkbox"] {
         <!-- Field markers will be added by JavaScript -->
         <path id="punt-arc" d="" fill="none" stroke="#333" stroke-width="2" stroke-dasharray="5,5" style="display: none;"/>
         <line id="los-line" x1="0" y1="0" x2="0" y2="0" stroke="black" stroke-width="2" style="display: none;"/>
-        <line id="return-line" x1="0" y1="0" x2="0" y2="0" stroke="#004d1a" stroke-width="3" style="display: none;"/>
+        <line id="return-line" x1="0" y1="0" x2="0" y2="0" stroke="#333" stroke-width="2" style="display: none;"/>
         <g id="landing-marker" style="display: none;">
-            <text x="0" y="0" font-family="Arial" font-size="16" fill="#333">×</text>
+            <text x="-6" y="6" font-family="Arial" font-size="16" fill="#333" font-weight="bold">×</text>
         </g>
         <g id="football-marker" style="display: none;">
             <!-- Simple football icon -->
@@ -399,6 +415,11 @@ input[type="checkbox"] {
             <p>Return Yards: <span id="return-yards">-</span> yards</p>
             <p>Net Punt: <span id="net-punt">-</span> yards</p>
         </div>
+
+        <div class="copyright">
+            &copy; 2024 Max A. All rights reserved.
+        </div>
+
     </div>
 
     <script>
@@ -607,9 +628,10 @@ let netPunt = los - final;
 
         // Initialize everything
         window.onload = function() {
-            initializeField();
-            setupInputHandlers();
-        };
+    initializeField();
+    setupInputHandlers();
+    updateSvgElements();
+};
 
 function updateFieldGraphics() {
     const svg = document.querySelector('.field-diagram svg');
@@ -690,12 +712,14 @@ function drawRegularPuntGraphics(losX, fieldWidth, fieldHeight) {
         y: -fieldHeight * 0.3
     };
     
-    puntArc.setAttribute('d', `M ${losX},${fieldHeight * 0.5} Q ${controlPoint.x},${controlPoint.y} ${landingX},${fieldHeight * 0.5}`);
+    // Update path and landing marker coordinates
+    const endY = fieldHeight * 0.5;
+    puntArc.setAttribute('d', `M ${losX},${endY} Q ${controlPoint.x},${controlPoint.y} ${landingX},${endY}`);
     puntArc.style.display = 'block';
     
-    // Position landing marker
+    // Position landing marker (X) at the end of the arc
     const landingMarker = document.getElementById('landing-marker');
-    landingMarker.setAttribute('transform', `translate(${landingX},${fieldHeight * 0.5})`);
+    landingMarker.setAttribute('transform', `translate(${landingX},${endY})`);
     landingMarker.style.display = 'block';
     
     // Handle return
@@ -705,24 +729,27 @@ function drawRegularPuntGraphics(losX, fieldWidth, fieldHeight) {
     if (finalValue) {
         const finalX = calculateFieldPosition(finalValue, finalSide, fieldWidth);
         
-        // Draw return line
+        // Draw return line starting exactly from the landing marker position
         const returnLine = document.getElementById('return-line');
-        returnLine.setAttribute('x1', landingX);
-        returnLine.setAttribute('x2', finalX);
-        returnLine.setAttribute('y1', fieldHeight * 0.5);
-        returnLine.setAttribute('y2', fieldHeight * 0.5);
+        returnLine.setAttribute('x1', landingX);  // Start from landing X
+        returnLine.setAttribute('x2', finalX);    // End at final position
+        returnLine.setAttribute('y1', endY);      // Use same Y coordinate as arc end
+        returnLine.setAttribute('y2', endY);      // Keep line horizontal
         returnLine.style.display = 'block';
         
-        // Position football marker
+        // Position football marker at the end of return line
         const footballMarker = document.getElementById('football-marker');
-        footballMarker.setAttribute('transform', `translate(${finalX},${fieldHeight * 0.5})`);
+        footballMarker.setAttribute('transform', `translate(${finalX},${endY})`);
         footballMarker.style.display = 'block';
     }
 }
 
 function calculateFieldPosition(value, side, width) {
-    const percentage = side === 'kick' ? value / 100 : (100 - value) / 100;
-    return width * percentage;
+    if (side === 'kick') {
+        return (value / 100) * width;
+    } else {
+        return ((100 - value) / 100) * width;
+    }
 }
 
 function hideAllMarkers() {
@@ -732,6 +759,22 @@ function hideAllMarkers() {
     document.getElementById('landing-marker').style.display = 'none';
     document.getElementById('football-marker').style.display = 'none';
 }
+
+function updateSvgElements() {
+    const svg = document.querySelector('.field-diagram svg');
+    
+    // Update landing marker (X) style
+    const landingMarker = document.getElementById('landing-marker');
+    landingMarker.innerHTML = `
+        <text x="-6" y="6" font-family="Arial" font-size="16" fill="#333" font-weight="bold">×</text>
+    `;
+    
+    // Update return line style
+    const returnLine = document.getElementById('return-line');
+    returnLine.setAttribute('stroke-width', '2');
+    returnLine.setAttribute('stroke', '#333');
+}
     </script>
+
 </body>
 </html>
