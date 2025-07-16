@@ -397,7 +397,6 @@ input[type="number"] {
         </div>
 
 <div class="button-group">
-    <button onclick="calculatePunt()">Calculate Punt Stats</button>
     <button onclick="resetCalculator()" class="reset">Reset</button>
 <button type="button" id="touchback-button" class="touchback" onclick="handleTouchback()">
     Touchback
@@ -417,7 +416,7 @@ input[type="number"] {
         </div>
 
         <div class="copyright">
-            &copy; 2024 Max A. All rights reserved.
+            &copy; 2025 Max A. All rights reserved.
         </div>
 
     </div>
@@ -474,6 +473,9 @@ input[type="number"] {
                             radio.checked = false;
                         });
                     }
+                    
+                    // Auto-calculate after input change
+                    calculatePunt();
                 });
 
                 // Add focus handler to highlight the active input
@@ -500,17 +502,23 @@ input[type="number"] {
                     
                     // Focus the corresponding input when radio is clicked
                     input.focus();
+                    
+                    // Auto-calculate after radio change
+                    calculatePunt();
                 });
             });
 
-// Add these lines inside your existing setupInputHandlers function
-document.querySelectorAll('input[type="number"], input[type="radio"]').forEach(input => {
-    input.addEventListener('input', updateFieldGraphics);
-    input.addEventListener('change', updateFieldGraphics);
-});
+            // Add these lines inside your existing setupInputHandlers function
+            document.querySelectorAll('input[type="number"], input[type="radio"]').forEach(input => {
+                input.addEventListener('input', updateFieldGraphics);
+                input.addEventListener('change', updateFieldGraphics);
+            });
 
-// Add handler for touchback button
-document.getElementById('touchback-button').addEventListener('click', updateFieldGraphics);
+            // Add handler for touchback button
+            document.getElementById('touchback-button').addEventListener('click', function() {
+                updateFieldGraphics();
+                calculatePunt(); // Auto-calculate when touchback is toggled
+            });
         }
 
 function resetCalculator() {
@@ -563,32 +571,60 @@ function handleTouchback() {
             row.classList.remove('disabled');
         }
     });
+    
+    // Auto-calculate after touchback toggle
+    calculatePunt();
 }
 
 function calculatePunt() {
     const errorDiv = document.getElementById('error-message');
-const isTouchback = document.getElementById('touchback-button').classList.contains('active');
+    const isTouchback = document.getElementById('touchback-button').classList.contains('active');
     let los, landing, final;
 
     // Get line of scrimmage
     const losSide = document.querySelector('input[name="los-side"]:checked')?.value;
     const losValue = losSide ? parseInt(document.getElementById(`los-${losSide}`).value) : null;
-    los = losSide === 'kick' ? losValue : (100 - losValue);
-
-    // Validate required inputs
+    
+    // If no LOS value, reset results and return
     if (!losValue || losValue < 1 || losValue > 50) {
-        errorDiv.style.display = 'block';
+        document.getElementById('punt-distance').textContent = '-';
+        document.getElementById('return-yards').textContent = '-';
+        document.getElementById('net-punt').textContent = '-';
+        errorDiv.style.display = losValue ? 'block' : 'none';
         return;
     }
+    
+    los = losSide === 'kick' ? losValue : (100 - losValue);
 
     if (isTouchback) {
         // For touchbacks, calculate based on endzone (0)
         landing = 100; // Ball lands in the endzone
         final = 80; // Ball placed at the 20 yard line
+        
+        errorDiv.style.display = 'none';
+        
+        let puntDistance = landing - los;
+        let returnYards = '-';
+        let netPunt = los - final;
+
+        // Display results
+        document.getElementById('punt-distance').textContent = puntDistance;
+        document.getElementById('return-yards').textContent = returnYards;
+        document.getElementById('net-punt').textContent = -netPunt;
     } else {
         // Normal punt calculation
         const landingSide = document.querySelector('input[name="landing-side"]:checked')?.value;
         const landingValue = landingSide ? parseInt(document.getElementById(`landing-${landingSide}`).value) : null;
+        
+        // If no landing value, reset results and return
+        if (!landingValue || landingValue < 1 || landingValue > 50) {
+            document.getElementById('punt-distance').textContent = '-';
+            document.getElementById('return-yards').textContent = '-';
+            document.getElementById('net-punt').textContent = '-';
+            errorDiv.style.display = landingValue ? 'block' : 'none';
+            return;
+        }
+        
         landing = landingSide === 'kick' ? landingValue : (100 - landingValue);
 
         // Get final spot (optional - defaults to landing spot if not provided)
@@ -606,24 +642,23 @@ const isTouchback = document.getElementById('touchback-button').classList.contai
             final = finalSide === 'kick' ? finalValue : (100 - finalValue);
         }
 
-        // Validate non-touchback inputs
-        if (!landingValue || landingValue < 1 || landingValue > 50 || 
-            (finalValue && (finalValue < 1 || finalValue > 50))) {
+        // Validate final input if provided
+        if (finalValue && (finalValue < 1 || finalValue > 50)) {
             errorDiv.style.display = 'block';
             return;
         }
+
+        errorDiv.style.display = 'none';
+
+        let puntDistance = landing - los;
+        let returnYards = landing - final;
+        let netPunt = los - final;
+
+        // Display results
+        document.getElementById('punt-distance').textContent = puntDistance;
+        document.getElementById('return-yards').textContent = returnYards;
+        document.getElementById('net-punt').textContent = -netPunt;
     }
-
-    errorDiv.style.display = 'none';
-
-    let puntDistance = landing - los;
-let returnYards = isTouchback ? '-' : (landing - final);
-let netPunt = los - final;
-
-    // Display results
-    document.getElementById('punt-distance').textContent = puntDistance;
-    document.getElementById('return-yards').textContent = returnYards;
-    document.getElementById('net-punt').textContent = -netPunt;
 }
 
         // Initialize everything
